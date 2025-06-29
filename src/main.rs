@@ -55,9 +55,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let new_stats = format!(
         "<!--START_STATS-->\n\
-        🧮 Total contributions made during the last 30 days: **`{total}`**  \n\
-        📊 Average contributions per day over these 30 days: **`{average}`**  \n\
-        🕒 Last updated: **`{timestamp}`**\n\
+        🧮 **{total}** contributions  \n\
+        📊 **{average}** per day  \n\
+        🕒 Last checked on **{timestamp}**\n\
         <!--END_STATS-->",
         total = total,
         average = average,
