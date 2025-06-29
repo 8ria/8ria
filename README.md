@@ -6,4 +6,6 @@
 * 🕒 Last checked on **2025-06-29**
 <!--END_STATS-->
 
+---
+
 📝 **Latest blog:** [**Teaching AI to Code Badly (On Purpose)**](https://andriak.com/blog/badly-trained-ai/)
