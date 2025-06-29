@@ -1,12 +1,12 @@
+import os
 import requests
 from datetime import datetime
 
 USERNAME = "8ria"
 START_DATE = datetime(2025, 5, 17)
 NOW = datetime.utcnow()
-DAYS = (NOW - START_DATE).days or 1  # avoid divide by zero
+DAYS = (NOW - START_DATE).days or 1
 
-# GitHub GraphQL query
 query = """
 {
   user(login: "%s") {
@@ -19,17 +19,15 @@ query = """
 }
 """ % (USERNAME, START_DATE.strftime("%Y-%m-%dT00:00:00Z"))
 
-response = requests.post(
-    'https://api.github.com/graphql',
-    json={'query': query},
-    headers={'Authorization': 'Bearer YOUR_GITHUB_TOKEN'}
-)
+token = os.getenv("G_TOKEN")
+headers = {'Authorization': f'Bearer {token}'}
 
+response = requests.post('https://api.github.com/graphql', json={'query': query}, headers=headers)
 data = response.json()
+
 total = data["data"]["user"]["contributionsCollection"]["contributionCalendar"]["totalContributions"]
 average = round(total / DAYS, 2)
 
-# Read, update, and write README.md
 with open("README.md", "r", encoding="utf-8") as f:
     content = f.read()
 
