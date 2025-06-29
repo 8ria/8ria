@@ -39,9 +39,9 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 new_stats = (
     f"<!--START_STATS-->\n"
-    f"- 🧮 Total contributions made during the last 30 days: <span style='font-size: 1.5em; font-weight: bold; background-color: #f0fff4; padding: 2px 6px; border-radius: 4px;'>{total}</span>  \n"
-    f"- 📊 Average contributions per day over these 30 days: <span style='font-size: 1.5em; font-weight: bold; background-color: #f0fff4; padding: 2px 6px; border-radius: 4px;'>{average}</span>  \n"
-    f"- 🕒 Last updated: <span style='font-size: 1.3em; color: #57606a;'>{timestamp}</span>\n"
+    f"- 🧮 Total contributions made during the last 30 days: **`{total}`**  \n"
+    f"- 📊 Average contributions per day over these 30 days: **`{average}`**  \n"
+    f"- 🕒 Last updated: **`{timestamp}`**\n"
     f"<!--END_STATS-->"
 )
 
