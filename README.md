@@ -2,12 +2,10 @@
 
 ## 📈 GitHub Activity
 
-Since **May 17, 2025**, I've made:
+<!--START_STATS-->
+🧮 Total contributions since **May 17, 2025**:  
+📆 Days active:  
+📊 Average per day:  
+<!--END_STATS-->
 
-- 🧮 Total contributions: **[TOTAL_CONTRIBUTIONS]**  
-- 📆 Days elapsed: **[DAYS_ELAPSED]**  
-- 📊 Average contributions per day: **[AVERAGE_CONTRIBUTIONS]**
-
----
-
-> ⏱️ Last updated: [DATE]
+> ⏱️ Auto-updated daily
