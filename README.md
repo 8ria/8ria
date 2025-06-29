@@ -3,8 +3,8 @@
 ## 📈 GitHub Activity
 
 <!--START_STATS-->
-- 🧮 Total contributions since May 17, 2025: **237**  
-- 📆 Days active: **43**  
-- 📊 Average per day: **5.51**  
-- 🕒 Last updated: **2025-06-29 18:12 UTC**
+- 🧮 Total contributions in last 30 days: **125**  
+- 📆 Days counted: **30**  
+- 📊 Average per day: **4.17**  
+- 🕒 Last updated: **2025-06-29 18:15 UTC**
 <!--END_STATS-->
