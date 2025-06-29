@@ -49,7 +49,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let average = (total as f64 / days * 100.0).round() / 100.0;
 
-    let timestamp = now.format("%Y-%m-%d %H:%M UTC").to_string();
+    let timestamp = now.format("%Y-%m-%d").to_string();
 
     let content = fs::read_to_string("README.md")?;
 
