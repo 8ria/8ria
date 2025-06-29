@@ -1,4 +1,5 @@
 ### 📈 Activity
+In the past 30 days:
 <!--START_STATS-->
 🧮 Total contributions made during the last 30 days: **`155`**  
 📊 Average contributions per day over these 30 days: **`5.17`**  
