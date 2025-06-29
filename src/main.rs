@@ -64,7 +64,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         timestamp = timestamp
     );
 
-    let re = Regex::new(r"<!--START_STATS-->.*?<!--END_STATS-->").unwrap();
+    let re = Regex::new(r"(?s)<!--START_STATS-->.*?<!--END_STATS-->").unwrap();
 
     let updated = re.replace(&content, new_stats.as_str());
 
