@@ -44,9 +44,8 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 new_stats = (
     f"<!--START_STATS-->\n"
-    f"- 🧮 Total contributions in last 30 days: **{total}**  \n"
-    f"- 📆 Days counted: **{DAYS}**  \n"
-    f"- 📊 Average per day: **{average}**  \n"
+    f"- 🧮 Total contributions made during the last 30 days: **{total}**  \n"
+    f"- 📊 Average contributions per day over these 30 days: **{average}**  \n"
     f"- 🕒 Last updated: **{timestamp}**\n"
     f"<!--END_STATS-->"
 )
