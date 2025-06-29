@@ -3,26 +3,31 @@ name: Update Contribution Stats
 on:
   schedule:
     - cron: "0 0 * * *"  # Runs every day at midnight UTC
-  workflow_dispatch:
+  workflow_dispatch:      # Allows manual run
 
 jobs:
   update-readme:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
+      - name: 📥 Checkout repo
+        uses: actions/checkout@v3
+
+      - name: 🐍 Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
-      - name: Install requests
+
+      - name: 📦 Install dependencies
         run: pip install requests
-      - name: Run update-stats.py
+
+      - name: 🚀 Run update-stats.py
         env:
-          G_TOKEN: ${{ secrets.G_TOKEN }}
+          G_TOKEN: ${{ secrets.G_TOKEN }}  # Your token must be saved as G_TOKEN in repo secrets
         run: python update-stats.py
-      - name: Commit changes
+
+      - name: 💾 Commit changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add README.md
-          git diff --quiet && echo "No changes to commit" || (git commit -m "Update contribution stats" && git push)
+          git diff --cached --quiet && echo "🟡 No changes to commit." || (git commit -m "🔄 Update contribution stats" && git push)
