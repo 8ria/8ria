@@ -1,5 +1,4 @@
-### 📈 Activity
-In the past 30 days:
+### 📈 Last 30 Days Activity
 <!--START_STATS-->
 🧮 **158** contributions  
 📊 **5.27** per day  
