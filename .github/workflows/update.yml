@@ -2,8 +2,8 @@ name: Update Contribution Stats
 
 on:
   schedule:
-    - cron: "0 0 * * *"  # Runs every day at midnight UTC
-  workflow_dispatch:      # Allows manual run
+    - cron: "0 0 * * *"
+  workflow_dispatch:
 
 jobs:
   update-readme:
@@ -22,7 +22,7 @@ jobs:
 
       - name: 🚀 Run update-stats.py
         env:
-          G_TOKEN: ${{ secrets.G_TOKEN }}  # Your token must be saved as G_TOKEN in repo secrets
+          G_TOKEN: ${{ secrets.G_TOKEN }}
         run: python update-stats.py
 
       - name: 💾 Commit changes
