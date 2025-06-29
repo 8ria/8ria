@@ -1,25 +1,29 @@
 import os
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 
 USERNAME = "8ria"
-START_DATE = datetime(2025, 5, 17)
 NOW = datetime.utcnow()
-DAYS = (NOW - START_DATE).days or 1
+START_DATE = NOW - timedelta(days=30)
+DAYS = 30
 
-# GitHub GraphQL query
+# GitHub GraphQL query with updated date range
 query = """
 {
   user(login: "%s") {
-    contributionsCollection(from: "%s") {
+    contributionsCollection(from: "%s", to: "%s") {
       contributionCalendar {
         totalContributions
       }
     }
   }
 }
-""" % (USERNAME, START_DATE.strftime("%Y-%m-%dT00:00:00Z"))
+""" % (
+    USERNAME,
+    START_DATE.strftime("%Y-%m-%dT00:00:00Z"),
+    NOW.strftime("%Y-%m-%dT00:00:00Z"),
+)
 
 # Get GitHub token from environment
 token = os.getenv("G_TOKEN")
@@ -32,7 +36,7 @@ data = response.json()
 # Extract contribution data
 total = data["data"]["user"]["contributionsCollection"]["contributionCalendar"]["totalContributions"]
 average = round(total / DAYS, 2)
-timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+timestamp = NOW.strftime("%Y-%m-%d %H:%M UTC")
 
 # Update README.md between markers
 with open("README.md", "r", encoding="utf-8") as f:
@@ -40,8 +44,8 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 new_stats = (
     f"<!--START_STATS-->\n"
-    f"- 🧮 Total contributions since May 17, 2025: **{total}**  \n"
-    f"- 📆 Days active: **{DAYS}**  \n"
+    f"- 🧮 Total contributions in last 30 days: **{total}**  \n"
+    f"- 📆 Days counted: **{DAYS}**  \n"
     f"- 📊 Average per day: **{average}**  \n"
     f"- 🕒 Last updated: **{timestamp}**\n"
     f"<!--END_STATS-->"
