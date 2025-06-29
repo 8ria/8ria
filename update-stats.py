@@ -40,9 +40,9 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 new_stats = (
     f"<!--START_STATS-->\n"
-    f"🧮 Total contributions since **May 17, 2025**: **{total}**\n"
-    f"📆 Days active: **{DAYS}**\n"
-    f"📊 Average per day: **{average}**\n"
+    f"🧮 Total contributions since **May 17, 2025**: **{total}**  \n"
+    f"📆 Days active: **{DAYS}**  \n"
+    f"📊 Average per day: **{average}**  \n"
     f"🕒 Last updated: **{timestamp}**\n"
     f"<!--END_STATS-->"
 )
