@@ -8,22 +8,23 @@ on:
 jobs:
   update-readme:
     runs-on: ubuntu-latest
+
     steps:
       - name: 📥 Checkout repo
         uses: actions/checkout@v3
 
-      - name: 🦀 Setup Rust
-        uses: actions/setup-rust@v1
+      - name: 🦀 Install Rust (via dtolnay/rust-toolchain)
+        uses: dtolnay/rust-toolchain@v1
         with:
-          rust-version: stable
+          toolchain: stable
 
       - name: ⚙️ Build Rust program
         run: cargo build --release
 
-      - name: 🚀 Run update_state binary
+      - name: 🚀 Run Rust binary
         env:
           G_TOKEN: ${{ secrets.G_TOKEN }}
-        run: ./target/release/update_state
+        run: ./target/release/update-stats
 
       - name: 💾 Commit changes
         run: |
