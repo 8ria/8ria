@@ -1,1 +1,1 @@
-🎱 Writing 'code', learning as I go.
+🎱 Writing code, learning as I go.
