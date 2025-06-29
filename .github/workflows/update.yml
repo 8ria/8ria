@@ -18,7 +18,7 @@ jobs:
         run: pip install requests
       - name: Run update-stats.py
         env:
-          GITHUB_TOKEN: ${{ secrets.G_TOKEN }}
+          G_TOKEN: ${{ secrets.G_TOKEN }}
         run: python update-stats.py
       - name: Commit changes
         run: |
