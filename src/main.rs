@@ -108,9 +108,9 @@ fn fetch_latest_blog_post(client: &Client) -> Result<BlogPost, Box<dyn std::erro
 fn parse_first_blog_post(html: &str) -> Result<BlogPost, Box<dyn std::error::Error>> {
     println!("🔍 Parsing HTML for blog posts...");
     
-    // More robust approach: find the entire first post-card block
+    // Simple approach: find the first post-card with onclick and title
     let post_card_pattern = Regex::new(
-        r#"(?s)<div class="post-card" onclick="window\.location\.href='([^']+)'">.*?<div class="post-title">([^<]+)</div>.*?(?=<div class="post-card"|</div>\s*</div>\s*<div id="footer-placeholder">|$)"#
+        r#"(?s)<div class="post-card" onclick="window\.location\.href='([^']+)'">.*?<div class="post-title">([^<]+)</div>"#
     )?;
     
     if let Some(captures) = post_card_pattern.captures(html) {
@@ -135,10 +135,9 @@ fn parse_first_blog_post(html: &str) -> Result<BlogPost, Box<dyn std::error::Err
         });
     }
     
-    // Simpler fallback approach
-    println!("🔄 Trying simpler parsing approach...");
+    // Fallback: try to find onclick and title separately
+    println!("🔄 Trying fallback parsing...");
     
-    // Find first onclick URL
     let onclick_regex = Regex::new(r#"onclick="window\.location\.href='([^']+)'"#)?;
     let first_title_regex = Regex::new(r#"<div class="post-title">([^<]+)</div>"#)?;
     
@@ -152,7 +151,7 @@ fn parse_first_blog_post(html: &str) -> Result<BlogPost, Box<dyn std::error::Err
         .map(|m| m.as_str().trim())
         .unwrap_or("Latest Post");
     
-    if !url_path.is_empty() && title != "Latest Post" {
+    if !url_path.is_empty() {
         let full_url = if url_path.starts_with("http") {
             url_path.to_string()
         } else {
