@@ -106,29 +106,19 @@ fn fetch_latest_blog_post(client: &Client) -> Result<BlogPost, Box<dyn std::erro
 }
 
 fn parse_first_blog_post(html: &str) -> Result<BlogPost, Box<dyn std::error::Error>> {
-    // Look for the first post-card div with onclick attribute
-    let post_card_regex = Regex::new(
-        r#"<div class="post-card" onclick="window\.location\.href='([^']+)'"[^>]*>.*?<div class="post-title">([^<]+)</div>"#
+    println!("🔍 Parsing HTML for blog posts...");
+    
+    // More robust approach: find the entire first post-card block
+    let post_card_pattern = Regex::new(
+        r#"(?s)<div class="post-card" onclick="window\.location\.href='([^']+)'">.*?<div class="post-title">([^<]+)</div>.*?(?=<div class="post-card"|</div>\s*</div>\s*<div id="footer-placeholder">|$)"#
     )?;
     
-    if let Some(captures) = post_card_regex.find_iter(html).next() {
-        let full_match = captures.as_str();
+    if let Some(captures) = post_card_pattern.captures(html) {
+        let url_path = captures.get(1).map(|m| m.as_str()).unwrap_or("");
+        let title = captures.get(2).map(|m| m.as_str().trim()).unwrap_or("Unknown Post");
         
-        // Extract the onclick URL
-        let url_regex = Regex::new(r#"onclick="window\.location\.href='([^']+)'"#)?;
-        let url_path = url_regex
-            .captures(full_match)
-            .and_then(|caps| caps.get(1))
-            .map(|m| m.as_str())
-            .unwrap_or("");
-        
-        // Extract the title
-        let title_regex = Regex::new(r#"<div class="post-title">([^<]+)</div>"#)?;
-        let title = title_regex
-            .captures(full_match)
-            .and_then(|caps| caps.get(1))
-            .map(|m| m.as_str().trim())
-            .unwrap_or("Unknown Post");
+        println!("🔗 Found URL path: '{}'", url_path);
+        println!("📝 Found title: '{}'", title);
         
         // Convert relative URL to full URL
         let full_url = if url_path.starts_with("http") {
@@ -137,7 +127,7 @@ fn parse_first_blog_post(html: &str) -> Result<BlogPost, Box<dyn std::error::Err
             format!("https://andriak.com/{}", url_path.trim_start_matches('/'))
         };
         
-        println!("📄 Found blog post: '{}' at '{}'", title, full_url);
+        println!("✅ Successfully parsed: '{}' -> '{}'", title, full_url);
         
         return Ok(BlogPost {
             title: title.to_string(),
@@ -145,8 +135,39 @@ fn parse_first_blog_post(html: &str) -> Result<BlogPost, Box<dyn std::error::Err
         });
     }
     
-    // Fallback: if regex fails, return a default
-    println!("⚠️  Could not parse blog post, using fallback");
+    // Simpler fallback approach
+    println!("🔄 Trying simpler parsing approach...");
+    
+    // Find first onclick URL
+    let onclick_regex = Regex::new(r#"onclick="window\.location\.href='([^']+)'"#)?;
+    let first_title_regex = Regex::new(r#"<div class="post-title">([^<]+)</div>"#)?;
+    
+    let url_path = onclick_regex.captures(html)
+        .and_then(|caps| caps.get(1))
+        .map(|m| m.as_str())
+        .unwrap_or("");
+    
+    let title = first_title_regex.captures(html)
+        .and_then(|caps| caps.get(1))
+        .map(|m| m.as_str().trim())
+        .unwrap_or("Latest Post");
+    
+    if !url_path.is_empty() && title != "Latest Post" {
+        let full_url = if url_path.starts_with("http") {
+            url_path.to_string()
+        } else {
+            format!("https://andriak.com/{}", url_path.trim_start_matches('/'))
+        };
+        
+        println!("📄 Fallback success: '{}' -> '{}'", title, full_url);
+        
+        return Ok(BlogPost {
+            title: title.to_string(),
+            url: full_url,
+        });
+    }
+    
+    println!("❌ All parsing attempts failed, using default");
     Ok(BlogPost {
         title: "Latest Post".to_string(),
         url: "https://andriak.com".to_string(),
