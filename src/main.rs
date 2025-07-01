@@ -19,7 +19,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let start_date = now - Duration::days(30);
     let days = 30.0;
     
-    // Fetch contribution stats
     let query = format!(
         r#"{{
   user(login: "{username}") {{
@@ -55,10 +54,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let average = (total as f64 / days * 100.0).round() / 100.0;
     let timestamp = now.format("%Y-%m-%d").to_string();
     
-    // Fetch latest blog post
     let latest_blog = fetch_latest_blog_post(&client)?;
     
-    // Read and update README.md
     let content = fs::read_to_string("README.md")?;
     
     let new_stats = format!(
@@ -90,7 +87,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn fetch_latest_blog_post(client: &Client) -> Result<BlogPost, Box<dyn std::error::Error>> {
     println!("🔍 Fetching latest blog post from 8ria.github.io...");
     
-    // Fetch the index.html from GitHub Pages
     let response = client
         .get("https://8ria.github.io/index.html")
         .header("User-Agent", "rust-reqwest")
@@ -99,7 +95,6 @@ fn fetch_latest_blog_post(client: &Client) -> Result<BlogPost, Box<dyn std::erro
     
     let html_content = response.text()?;
     
-    // Parse the HTML to find the first blog post
     let post = parse_first_blog_post(&html_content)?;
     
     Ok(post)
@@ -108,7 +103,6 @@ fn fetch_latest_blog_post(client: &Client) -> Result<BlogPost, Box<dyn std::erro
 fn parse_first_blog_post(html: &str) -> Result<BlogPost, Box<dyn std::error::Error>> {
     println!("🔍 Parsing HTML for blog posts...");
     
-    // Simple approach: find the first post-card with onclick and title
     let post_card_pattern = Regex::new(
         r#"(?s)<div class="post-card" onclick="window\.location\.href='([^']+)'">.*?<div class="post-title">([^<]+)</div>"#
     )?;
@@ -120,7 +114,6 @@ fn parse_first_blog_post(html: &str) -> Result<BlogPost, Box<dyn std::error::Err
         println!("🔗 Found URL path: '{}'", url_path);
         println!("📝 Found title: '{}'", title);
         
-        // Convert relative URL to full URL
         let full_url = if url_path.starts_with("http") {
             url_path.to_string()
         } else {
@@ -135,7 +128,6 @@ fn parse_first_blog_post(html: &str) -> Result<BlogPost, Box<dyn std::error::Err
         });
     }
     
-    // Fallback: try to find onclick and title separately
     println!("🔄 Trying fallback parsing...");
     
     let onclick_regex = Regex::new(r#"onclick="window\.location\.href='([^']+)'"#)?;
