@@ -1,4 +1,4 @@
-use chrono::{Duration, Utc, DateTime, Local, NaiveDateTime};
+use chrono::{Duration, Utc, DateTime};
 use regex::Regex;
 use reqwest::blocking::Client;
 use serde_json::Value;
@@ -6,6 +6,7 @@ use std::env;
 use std::fs;
 use std::path::Path;
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
 struct BlogPost {
@@ -13,11 +14,12 @@ struct BlogPost {
     url: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 struct DailySchedule {
     date: String,
-    run_times: Vec<u8>, // Hours of the day (0-23)
+    run_times: Vec<u16>, // Minutes from midnight (0-1439)
     total_runs: u8,
+    interval_minutes: f64,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -104,7 +106,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn should_run_now() -> Result<bool, Box<dyn std::error::Error>> {
     let now = Utc::now();
     let today = now.format("%Y-%m-%d").to_string();
-    let current_hour = now.format("%H").to_string().parse::<u8>()?;
+    let current_minute = (now.hour() * 60 + now.minute()) as u16;
     
     let schedule_file = format!(".schedule_{}.json", today);
     
@@ -122,17 +124,38 @@ fn should_run_now() -> Result<bool, Box<dyn std::error::Error>> {
         fs::write(&schedule_file, schedule_json)?;
         
         println!("📅 Generated new schedule for {}", today);
-        println!("🎯 Will run {} times today at hours: {:?}", 
-                 schedule.total_runs, schedule.run_times);
+        println!("🎯 Will run {} times today (every ~{:.2} minutes)", 
+                 schedule.total_runs, schedule.interval_minutes);
+        
+        // Convert minutes to readable times and display
+        println!("⏰ Scheduled times:");
+        for (i, &minute) in schedule.run_times.iter().enumerate() {
+            let hour = minute / 60;
+            let min = minute % 60;
+            println!("   #{}: {:02}:{:02} UTC", i + 1, hour, min);
+        }
         
         schedule
     };
     
-    // Check if current hour is in our schedule
-    let should_run = schedule.run_times.contains(&current_hour);
+    // Check if current minute is close to any scheduled time (within 5 minutes)
+    let tolerance = 5; // minutes
+    let should_run = schedule.run_times.iter().any(|&scheduled_minute| {
+        let diff = if current_minute >= scheduled_minute {
+            current_minute - scheduled_minute
+        } else {
+            scheduled_minute - current_minute
+        };
+        diff <= tolerance
+    });
     
-    println!("⏰ Current time: {}:xx UTC", current_hour);
-    println!("📋 Today's schedule: {:?}", schedule.run_times);
+    let current_hour = current_minute / 60;
+    let current_min = current_minute % 60;
+    
+    println!("⏰ Current time: {:02}:{:02} UTC (minute {} of day)", 
+             current_hour, current_min, current_minute);
+    println!("📋 Today's schedule: {} runs every ~{:.2} minutes", 
+             schedule.total_runs, schedule.interval_minutes);
     println!("🤔 Should run now: {}", should_run);
     
     Ok(should_run)
@@ -144,22 +167,38 @@ fn generate_daily_schedule(date: &str) -> DailySchedule {
     // Generate random number of runs (1-30)
     let total_runs = rng.gen_range(1..=30);
     
-    // Generate random hours
+    // Calculate the interval in minutes (24 hours = 1440 minutes)
+    let interval_minutes = 1440.0 / total_runs as f64;
+    
+    // Generate evenly distributed times with some randomness
     let mut run_times = Vec::new();
-    for _ in 0..total_runs {
-        let hour = rng.gen_range(0..24);
-        if !run_times.contains(&hour) {
-            run_times.push(hour);
+    for i in 0..total_runs {
+        // Base time for this run
+        let base_time = (i as f64 * interval_minutes) as u16;
+        
+        // Add some randomness (±15 minutes)
+        let jitter = rng.gen_range(-15..=15);
+        let mut actual_time = base_time as i32 + jitter;
+        
+        // Keep within bounds (0-1439 minutes)
+        if actual_time < 0 {
+            actual_time = 0;
+        } else if actual_time >= 1440 {
+            actual_time = 1439;
         }
+        
+        run_times.push(actual_time as u16);
     }
     
-    // Sort the hours
+    // Sort the times and remove any duplicates
     run_times.sort();
+    run_times.dedup();
     
     DailySchedule {
         date: date.to_string(),
         run_times,
-        total_runs: run_times.len() as u8,
+        total_runs: total_runs as u8,
+        interval_minutes,
     }
 }
 
