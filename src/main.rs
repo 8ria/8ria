@@ -1,12 +1,9 @@
-use chrono::{Duration, Utc, DateTime, Timelike};
+use chrono::{Duration, Utc, Timelike};
 use regex::Regex;
 use reqwest::blocking::Client;
 use serde_json::Value;
 use std::env;
 use std::fs;
-use std::path::Path;
-use rand::Rng;
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
 struct BlogPost {
@@ -14,24 +11,10 @@ struct BlogPost {
     url: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct DailySchedule {
-    date: String,
-    run_times: Vec<u16>, // Minutes from midnight (0-1439)
-    total_runs: u8,
-    interval_minutes: f64,
-}
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
     
-    // Check if we should run based on random schedule
-    if !should_run_now()? {
-        println!("⏰ Not scheduled to run at this time. Skipping...");
-        return Ok(());
-    }
-    
-    println!("🚀 Running scheduled update...");
+    println!("🚀 Running update...");
     
     let username = "8ria";
     let now = Utc::now();
@@ -101,105 +84,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📝 Latest blog post: {} -> {}", latest_blog.title, latest_blog.url);
     
     Ok(())
-}
-
-fn should_run_now() -> Result<bool, Box<dyn std::error::Error>> {
-    let now = Utc::now();
-    let today = now.format("%Y-%m-%d").to_string();
-    let current_minute = (now.hour() * 60 + now.minute()) as u16;
-    
-    let schedule_file = format!(".schedule_{}.json", today);
-    
-    // Check if we have a schedule for today
-    let schedule = if Path::new(&schedule_file).exists() {
-        // Load existing schedule
-        let content = fs::read_to_string(&schedule_file)?;
-        serde_json::from_str::<DailySchedule>(&content)?
-    } else {
-        // Generate new schedule for today
-        let schedule = generate_daily_schedule(&today);
-        
-        // Save schedule to file
-        let schedule_json = serde_json::to_string_pretty(&schedule)?;
-        fs::write(&schedule_file, schedule_json)?;
-        
-        println!("📅 Generated new schedule for {}", today);
-        println!("🎯 Will run {} times today (every ~{:.2} minutes)", 
-                 schedule.total_runs, schedule.interval_minutes);
-        
-        // Convert minutes to readable times and display
-        println!("⏰ Scheduled times:");
-        for (i, &minute) in schedule.run_times.iter().enumerate() {
-            let hour = minute / 60;
-            let min = minute % 60;
-            println!("   #{}: {:02}:{:02} UTC", i + 1, hour, min);
-        }
-        
-        schedule
-    };
-    
-    // Check if current minute is close to any scheduled time (within 10 minutes)
-    let tolerance = 10; // minutes
-    let should_run = schedule.run_times.iter().any(|&scheduled_minute| {
-        let diff = if current_minute >= scheduled_minute {
-            current_minute - scheduled_minute
-        } else {
-            scheduled_minute - current_minute
-        };
-        diff <= tolerance
-    });
-    
-    let current_hour = current_minute / 60;
-    let current_min = current_minute % 60;
-    
-    println!("⏰ Current time: {:02}:{:02} UTC (minute {} of day)", 
-             current_hour, current_min, current_minute);
-    println!("📋 Today's schedule: {} runs every ~{:.2} minutes", 
-             schedule.total_runs, schedule.interval_minutes);
-    println!("🤔 Should run now: {}", should_run);
-    
-    Ok(should_run)
-}
-
-fn generate_daily_schedule(date: &str) -> DailySchedule {
-    let mut rng = rand::thread_rng();
-    
-    // Generate random number of runs (1-30)
-    let total_runs = rng.gen_range(1..=30);
-    
-    // Calculate the interval in minutes (24 hours = 1440 minutes)
-    let interval_minutes = 1440.0 / total_runs as f64;
-    
-    // Generate evenly distributed times with some randomness
-    let mut run_times = Vec::new();
-    for i in 0..total_runs {
-        // Base time for this run
-        let base_time = (i as f64 * interval_minutes) as u16;
-        
-        // Add some randomness (±15 minutes)
-        let jitter = rng.gen_range(-15..=15);
-        let mut actual_time = base_time as i32 + jitter;
-        
-        // Keep within bounds (0-1439 minutes)
-        if actual_time < 0 {
-            actual_time = 0;
-        } else if actual_time >= 1440 {
-            actual_time = 1439;
-        }
-        
-        run_times.push(actual_time as u16);
-    }
-    
-    // Sort the times and remove any duplicates
-    run_times.sort();
-    run_times.dedup();
-    
-    DailySchedule {
-        date: date.to_string(),
-        run_times,
-        total_runs: total_runs as u8,
-        interval_minutes,
-    }
 }
 
 fn fetch_latest_blog_post(client: &Client) -> Result<BlogPost, Box<dyn std::error::Error>> {
