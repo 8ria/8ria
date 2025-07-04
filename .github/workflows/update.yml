@@ -1,9 +1,10 @@
 name: Update Contribution Stats & Latest Blog
 on:
   schedule:
+    # Run every hour - the Rust code will decide if it should actually update
     - cron: "0 * * * *"
   workflow_dispatch:
-
+    
 jobs:
   update-readme:
     runs-on: ubuntu-latest
@@ -35,15 +36,16 @@ jobs:
           G_TOKEN: ${{ secrets.G_TOKEN }}
         run: ./target/release/update-stats
         
-      - name: 💾 Commit changes
+      - name: 💾 Commit changes (if any)
         run: |
           git config user.name "8ria"
           git config user.email "8ria@users.noreply.github.com"
           git add README.md
+          git add .schedule_*.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "🟡 No changes to commit."
           else
-            git commit -m "🔄 Update contribution stats and latest blog post"
+            git commit -m "🔄 Update contribution stats and latest blog post [$(date -u +%H:%M)]"
             git push
             echo "✅ Changes committed and pushed."
           fi
