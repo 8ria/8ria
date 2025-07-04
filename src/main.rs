@@ -138,8 +138,8 @@ fn should_run_now() -> Result<bool, Box<dyn std::error::Error>> {
         schedule
     };
     
-    // Check if current minute is close to any scheduled time (within 5 minutes)
-    let tolerance = 5; // minutes
+    // Check if current minute is close to any scheduled time (within 10 minutes)
+    let tolerance = 10; // minutes
     let should_run = schedule.run_times.iter().any(|&scheduled_minute| {
         let diff = if current_minute >= scheduled_minute {
             current_minute - scheduled_minute
