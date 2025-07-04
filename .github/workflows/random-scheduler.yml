@@ -1,0 +1,75 @@
+name: Random Scheduler
+on:
+  schedule:
+    # Run every day at midnight UTC to set up the day's schedule
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  schedule-updates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repo
+        uses: actions/checkout@v4
+        
+      - name: 🎲 Generate and execute random schedule
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Generate random number between 1 and 30
+          run_count=$((RANDOM % 30 + 1))
+          echo "🎯 Today will run $run_count times"
+          
+          # Calculate time intervals
+          total_minutes=1440  # 24 hours * 60 minutes
+          interval=$((total_minutes / run_count))
+          
+          echo "⏱️ Running every ~$interval minutes"
+          echo "📅 Schedule for today:"
+          
+          # Generate schedule and run immediately
+          for i in $(seq 1 $run_count); do
+            # Add some randomness to the interval (±30 minutes)
+            jitter=$((RANDOM % 61 - 30))  # -30 to +30 minutes
+            wait_minutes=$(((i - 1) * interval + jitter))
+            
+            # Ensure we don't go negative or beyond 24 hours
+            if [ $wait_minutes -lt 0 ]; then
+              wait_minutes=0
+            elif [ $wait_minutes -gt 1440 ]; then
+              wait_minutes=1440
+            fi
+            
+            # Convert to hours and minutes for display
+            hours=$((wait_minutes / 60))
+            minutes=$((wait_minutes % 60))
+            printf "   Run %2d: %02d:%02d UTC\n" $i $hours $minutes
+            
+            # Schedule the job
+            if [ $i -eq 1 ]; then
+              # First run - execute immediately
+              echo "🚀 Executing run $i immediately..."
+              curl -X POST \
+                -H "Authorization: token $GITHUB_TOKEN" \
+                -H "Accept: application/vnd.github.v3+json" \
+                "https://api.github.com/repos/${{ github.repository }}/actions/workflows/update.yml/dispatches" \
+                -d '{"ref":"main"}'
+            else
+              # Subsequent runs - wait then execute
+              echo "⏳ Scheduling run $i in $wait_minutes minutes..."
+              (
+                sleep $((wait_minutes * 60))
+                echo "🚀 Executing scheduled run $i..."
+                curl -X POST \
+                  -H "Authorization: token $GITHUB_TOKEN" \
+                  -H "Accept: application/vnd.github.v3+json" \
+                  "https://api.github.com/repos/${{ github.repository }}/actions/workflows/update.yml/dispatches" \
+                  -d '{"ref":"main"}'
+              ) &
+            fi
+          done
+          
+          echo "✅ All runs scheduled for today!"
+          
+          # Wait for all background jobs to complete
+          wait
