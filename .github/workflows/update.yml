@@ -1,8 +1,8 @@
 name: Update Contribution Stats & Latest Blog
 on:
   schedule:
-    # Run every hour - the Rust code will decide if it should actually update
-    - cron: "0 * * * *"
+    # Run every 10 minutes to catch the scheduled times
+    - cron: "*/10 * * * *"
   workflow_dispatch:
     
 jobs:
