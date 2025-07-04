@@ -1,0 +1,132 @@
+name: Random Daily Scheduler
+on:
+  schedule:
+    # Run every hour to check if we should execute
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+jobs:
+  check-and-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repo
+        uses: actions/checkout@v4
+        
+      - name: 🎲 Check if we should run now
+        id: should-run
+        run: |
+          # Get current date and hour
+          current_date=$(date -u +%Y-%m-%d)
+          current_hour=$(date -u +%H)
+          current_minute=$(date -u +%M)
+          
+          # File to store today's schedule
+          schedule_file="/tmp/schedule_${current_date}.txt"
+          
+          # Check if we have a schedule for today
+          if [ ! -f "$schedule_file" ]; then
+            echo "📅 Generating new schedule for $current_date"
+            
+            # Generate random number of runs (1-30)
+            run_count=$((RANDOM % 30 + 1))
+            echo "🎯 Will run $run_count times today"
+            
+            # Generate random hours for execution
+            hours=""
+            for i in $(seq 1 $run_count); do
+              random_hour=$((RANDOM % 24))
+              hours="$hours $random_hour"
+            done
+            
+            # Sort and remove duplicates
+            sorted_hours=$(echo $hours | tr ' ' '\n' | sort -n | uniq)
+            
+            # Save to file
+            echo "$sorted_hours" > "$schedule_file"
+            echo "📝 Schedule saved: $sorted_hours"
+          else
+            echo "📖 Loading existing schedule for $current_date"
+            sorted_hours=$(cat "$schedule_file")
+          fi
+          
+          # Check if current hour is in our schedule
+          should_run="false"
+          for hour in $sorted_hours; do
+            if [ "$hour" = "$current_hour" ]; then
+              should_run="true"
+              break
+            fi
+          done
+          
+          echo "⏰ Current time: ${current_hour}:${current_minute} UTC"
+          echo "📋 Today's schedule: $sorted_hours"
+          echo "🤔 Should run now: $should_run"
+          
+          echo "should_run=$should_run" >> $GITHUB_OUTPUT
+          
+      - name: 🚀 Trigger update workflow
+        if: steps.should-run.outputs.should_run == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'update.yml',
+              ref: 'main'
+            });
+            
+            console.log('✅ Triggered update workflow');
+
+---
+
+# .github/workflows/update.yml (Updated)
+name: Update Contribution Stats & Latest Blog
+on:
+  workflow_dispatch:
+  # Remove the schedule trigger since we'll use the scheduler workflow
+  
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repo
+        uses: actions/checkout@v4
+        
+      - name: 🦀 Install Rust (via dtolnay/rust-toolchain)
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+          
+      - name: 📦 Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+            
+      - name: ⚙️ Build Rust program
+        run: cargo build --release
+        
+      - name: 🚀 Run Rust binary
+        env:
+          G_TOKEN: ${{ secrets.G_TOKEN }}
+        run: ./target/release/update-stats
+        
+      - name: 💾 Commit changes
+        run: |
+          git config user.name "8ria"
+          git config user.email "8ria@users.noreply.github.com"
+          git add README.md
+          if git diff --cached --quiet; then
+            echo "🟡 No changes to commit."
+          else
+            git commit -m "🔄 Update contribution stats and latest blog post [$(date -u +%H:%M)]"
+            git push
+            echo "✅ Changes committed and pushed."
+          fi
