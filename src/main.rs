@@ -1,9 +1,11 @@
-use chrono::{Duration, Utc};
+use chrono::{Duration, Utc, DateTime, Local, NaiveDateTime};
 use regex::Regex;
 use reqwest::blocking::Client;
 use serde_json::Value;
 use std::env;
 use std::fs;
+use std::path::Path;
+use rand::Rng;
 
 #[derive(Debug)]
 struct BlogPost {
@@ -11,8 +13,23 @@ struct BlogPost {
     url: String,
 }
 
+#[derive(Debug)]
+struct DailySchedule {
+    date: String,
+    run_times: Vec<u8>, // Hours of the day (0-23)
+    total_runs: u8,
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
+    
+    // Check if we should run based on random schedule
+    if !should_run_now()? {
+        println!("⏰ Not scheduled to run at this time. Skipping...");
+        return Ok(());
+    }
+    
+    println!("🚀 Running scheduled update...");
     
     let username = "8ria";
     let now = Utc::now();
@@ -52,7 +69,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("Failed to parse totalContributions");
     
     let average = (total as f64 / days * 100.0).round() / 100.0;
-    let timestamp = now.format("%Y-%m-%d").to_string();
+    let timestamp = now.format("%Y-%m-%d %H:%M UTC").to_string();
     
     let latest_blog = fetch_latest_blog_post(&client)?;
     
@@ -82,6 +99,68 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n📝 Latest blog post: {} -> {}", latest_blog.title, latest_blog.url);
     
     Ok(())
+}
+
+fn should_run_now() -> Result<bool, Box<dyn std::error::Error>> {
+    let now = Utc::now();
+    let today = now.format("%Y-%m-%d").to_string();
+    let current_hour = now.format("%H").to_string().parse::<u8>()?;
+    
+    let schedule_file = format!(".schedule_{}.json", today);
+    
+    // Check if we have a schedule for today
+    let schedule = if Path::new(&schedule_file).exists() {
+        // Load existing schedule
+        let content = fs::read_to_string(&schedule_file)?;
+        serde_json::from_str::<DailySchedule>(&content)?
+    } else {
+        // Generate new schedule for today
+        let schedule = generate_daily_schedule(&today);
+        
+        // Save schedule to file
+        let schedule_json = serde_json::to_string_pretty(&schedule)?;
+        fs::write(&schedule_file, schedule_json)?;
+        
+        println!("📅 Generated new schedule for {}", today);
+        println!("🎯 Will run {} times today at hours: {:?}", 
+                 schedule.total_runs, schedule.run_times);
+        
+        schedule
+    };
+    
+    // Check if current hour is in our schedule
+    let should_run = schedule.run_times.contains(&current_hour);
+    
+    println!("⏰ Current time: {}:xx UTC", current_hour);
+    println!("📋 Today's schedule: {:?}", schedule.run_times);
+    println!("🤔 Should run now: {}", should_run);
+    
+    Ok(should_run)
+}
+
+fn generate_daily_schedule(date: &str) -> DailySchedule {
+    let mut rng = rand::thread_rng();
+    
+    // Generate random number of runs (1-30)
+    let total_runs = rng.gen_range(1..=30);
+    
+    // Generate random hours
+    let mut run_times = Vec::new();
+    for _ in 0..total_runs {
+        let hour = rng.gen_range(0..24);
+        if !run_times.contains(&hour) {
+            run_times.push(hour);
+        }
+    }
+    
+    // Sort the hours
+    run_times.sort();
+    
+    DailySchedule {
+        date: date.to_string(),
+        run_times,
+        total_runs: run_times.len() as u8,
+    }
 }
 
 fn fetch_latest_blog_post(client: &Client) -> Result<BlogPost, Box<dyn std::error::Error>> {
