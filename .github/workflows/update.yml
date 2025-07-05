@@ -1,11 +1,8 @@
 name: Update Contribution Stats & Latest Blog
-
 on:
   schedule:
-    # Check every 5 minutes if we should run
-    - cron: "*/5 * * * *"
+    - cron: "0 * "*
   workflow_dispatch:
-
 jobs:
   update-readme:
     runs-on: ubuntu-latest
@@ -13,68 +10,12 @@ jobs:
       - name: 📥 Checkout repo
         uses: actions/checkout@v4
         
-      - name: 🔍 Check if should run now
-        id: check-schedule
-        run: |
-          today=$(date -u +%Y-%m-%d)
-          current_time=$(date -u +%H:%M)
-          
-          schedule_file="schedule_${today}.txt"
-          
-          if [ ! -f "$schedule_file" ]; then
-            echo "📅 No schedule file found for $today"
-            echo "should_run=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          
-          # Load schedule
-          source $schedule_file
-          
-          echo "📋 Today's schedule ($today):"
-          echo "   Total runs: $TOTAL_RUNS"
-          echo "   Interval: $INTERVAL_MINUTES minutes"
-          echo "   Current time: $current_time UTC"
-          
-          # Check if current time matches any scheduled time (within 2 minutes)
-          should_run=false
-          for scheduled_time in $SCHEDULE_TIMES; do
-            # Convert times to minutes for comparison
-            current_hour=$(echo $current_time | cut -d: -f1)
-            current_minute=$(echo $current_time | cut -d: -f2)
-            current_total_minutes=$((current_hour * 60 + current_minute))
-            
-            scheduled_hour=$(echo $scheduled_time | cut -d: -f1)
-            scheduled_minute=$(echo $scheduled_time | cut -d: -f2)
-            scheduled_total_minutes=$((scheduled_hour * 60 + scheduled_minute))
-            
-            # Check if within 2 minutes
-            diff=$((current_total_minutes - scheduled_total_minutes))
-            if [ $diff -lt 0 ]; then
-              diff=$((-diff))
-            fi
-            
-            if [ $diff -le 2 ]; then
-              echo "✅ Match found! Scheduled: $scheduled_time, Current: $current_time (diff: ${diff}m)"
-              should_run=true
-              break
-            fi
-          done
-          
-          if [ "$should_run" = false ]; then
-            echo "⏰ No scheduled run at this time"
-            echo "📋 Scheduled times: $SCHEDULE_TIMES"
-          fi
-          
-          echo "should_run=$should_run" >> $GITHUB_OUTPUT
-        
-      - name: 🦀 Install Rust (if running)
-        if: steps.check-schedule.outputs.should_run == 'true'
+      - name: 🦀 Install Rust (via dtolnay/rust-toolchain)
         uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
           
-      - name: 📦 Cache Rust dependencies (if running)
-        if: steps.check-schedule.outputs.should_run == 'true'
+      - name: 📦 Cache Rust dependencies
         uses: actions/cache@v3
         with:
           path: |
@@ -85,18 +26,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
             
-      - name: ⚙️ Build Rust program (if running)
-        if: steps.check-schedule.outputs.should_run == 'true'
+      - name: ⚙️ Build Rust program
         run: cargo build --release
         
-      - name: 🚀 Run update
-        if: steps.check-schedule.outputs.should_run == 'true'
+      - name: 🚀 Run Rust binary
         env:
           G_TOKEN: ${{ secrets.G_TOKEN }}
         run: ./target/release/update-stats
         
-      - name: 💾 Commit changes (if running)
-        if: steps.check-schedule.outputs.should_run == 'true'
+      - name: 💾 Commit changes
         run: |
           git config user.name "8ria"
           git config user.email "8ria@users.noreply.github.com"
@@ -104,7 +42,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "🟡 No changes to commit."
           else
-            git commit -m "🔄 Update contribution stats and latest blog post [$(date -u +%H:%M)]"
+            git commit -m "🔄 Update contribution stats and latest blog post"
             git push
             echo "✅ Changes committed and pushed."
           fi
