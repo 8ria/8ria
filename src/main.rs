@@ -1,20 +1,16 @@
-use chrono::{Duration, Utc, Timelike};
+use chrono::{Duration, Utc};
 use regex::Regex;
 use reqwest::blocking::Client;
 use serde_json::Value;
 use std::env;
 use std::fs;
-
 #[derive(Debug)]
 struct BlogPost {
     title: String,
     url: String,
 }
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
-    
-    println!("🚀 Running update...");
     
     let username = "8ria";
     let now = Utc::now();
@@ -54,7 +50,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("Failed to parse totalContributions");
     
     let average = (total as f64 / days * 100.0).round() / 100.0;
-    let timestamp = now.format("%Y-%m-%d %H:%M UTC").to_string();
+    let timestamp = now.format("%Y-%m-%d").to_string();
     
     let latest_blog = fetch_latest_blog_post(&client)?;
     
@@ -85,7 +81,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     Ok(())
 }
-
 fn fetch_latest_blog_post(client: &Client) -> Result<BlogPost, Box<dyn std::error::Error>> {
     println!("🔍 Fetching latest blog post from 8ria.github.io...");
     
@@ -101,7 +96,6 @@ fn fetch_latest_blog_post(client: &Client) -> Result<BlogPost, Box<dyn std::erro
     
     Ok(post)
 }
-
 fn parse_first_blog_post(html: &str) -> Result<BlogPost, Box<dyn std::error::Error>> {
     println!("🔍 Parsing HTML for blog posts...");
     
