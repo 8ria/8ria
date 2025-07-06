@@ -1,7 +1,7 @@
 name: Update Contribution Stats & Latest Blog
 on:
   schedule:
-    - cron: "0 * "*
+    - cron: "0 * * * *"
   workflow_dispatch:
 jobs:
   update-readme:
