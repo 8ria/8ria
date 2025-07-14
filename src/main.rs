@@ -47,9 +47,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ---\n\
         📝 **Latest blog:** [**{blog_title}**]({blog_url})\n\
         <!--END_STATS-->",
-        total = stats.total_contributions,
-        average = stats.average_per_day,
-        streak = streak,
+        total = to_emoji_number(stats.total_contributions),
+        average = to_emoji_number(format!("{:.2}", stats.average_per_day)),
+        streak = to_emoji_number(streak),
         timestamp = timestamp,
         blog_title = latest_blog.title,
         blog_url = latest_blog.url
@@ -309,4 +309,26 @@ fn parse_first_blog_post(html: &str) -> Result<BlogPost, Box<dyn std::error::Err
         title: "Latest Post".to_string(),
         url: "https://andriak.com".to_string(),
     })
+}
+
+fn to_emoji_number(n: impl ToString) -> String {
+    let digit_map = [
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'
+    ];
+
+    let emoji_map = [
+        "0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "🎱", "9️⃣", "•"
+    ];
+
+    n.to_string()
+        .chars()
+        .map(|c| {
+            if let Some(pos) = digit_map.iter().position(|&d| d == c) {
+                emoji_map[pos]
+            } else {
+                "❓"
+            }
+        })
+        .collect::<Vec<&str>>()
+        .join("")
 }
