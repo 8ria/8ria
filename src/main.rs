@@ -40,10 +40,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let new_stats = format!(
         "<!--START_STATS-->\n\
         ### 📈 Last 30 Days Activity ({timestamp})  \n\
-        - 🧮 **{total}** contributions  \n\
-        - 📊 **{average}** per day\n\
+        - **{total}** contributions  \n\
+        - **{average}** per day\n\
         ---\n\
-        - 🔥 **{streak}** day streak!\n\
+        - **{streak}** day streak!\n\
         ---\n\
         📝 **Latest blog:** [**{blog_title}**]({blog_url})\n\
         <!--END_STATS-->",
