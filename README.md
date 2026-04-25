@@ -1,9 +1,9 @@
 <!--START_STATS-->
 ### 📈 Last 30 Days Activity (2026-04-25)  
-- **4️⃣4️⃣6️⃣** contributions  
-- **1️⃣4️⃣•🎱7️⃣** per day
+- **4️⃣4️⃣7️⃣** contributions  
+- **1️⃣4️⃣•9️⃣0️⃣** per day
 ---
-- **🎱9️⃣** day streak!
+- **9️⃣0️⃣** day streak!
 ---
 📝 **Latest blog:** [**The Quantum Loop: Programming in Superposition**](https://andriak.com/blog/quantum-loop)
 <!--END_STATS-->
